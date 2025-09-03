@@ -123,6 +123,11 @@ screen.blit(w_pawn,(514,454))
 pygame.display.flip()
 
 
+rect = Rect(80,81,60,60)
+rect2 = Rect(140,81,60,60)
+pygame.draw.rect(screen,(255,0,0),rect)
+pygame.draw.rect(screen,(0,0,255),rect2)
+pygame.display.flip()
 
 while True:
     for event in pygame.event.get():
