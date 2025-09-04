@@ -7,17 +7,9 @@ pygame.init()
 
 width = 640
 height = 640
-screen = pygame.display.set_mode((width,height))
-pygame.display.set_caption("chess")
-pygame.display.set_icon(pygame.image.load("image/favicon.png"))
+screen = Screen(width, height).screen
 
-#load board image
-board0 = pygame.image.load("image/board.jpg")
-board0.convert()
-board = pygame.transform.rotozoom(board0,0,0.4)
-rect_board = board.get_rect()
-rect_board.center = width//2,height//2
-
+board = Chessboard(width, height)
 
 #load white peice image
 w_king0 = pygame.image.load("image/w_king.png")
@@ -70,18 +62,22 @@ b_pawn0 = pygame.image.load("image/b_pawn.png")
 b_pawn0.convert()
 b_pawn = pygame.transform.rotozoom(b_pawn0,0,0.4)
 
-
-#value of peice
-peices = {
-    "queen": 9,
-    "rook": 5,
-    "bishop": 3,
-    "knight": 3,
-    "pawn": 1
-}
-
 screen.fill((40,40,40))
-screen.blit(board,((width-board.get_width())/2,(height-board.get_height())/2))
+screen.blit(board.surf,((width-board.surf.get_width())/2,(height-board.surf.get_height())/2))
+
+x = 80
+y = 501
+
+for rank in range(1,9):
+    rank_squares = []
+    for file in range(1,9):
+        square = Square((x, y),(rank, file))
+        rank_squares.append(square)
+        screen.blit(square.surf, square.coordinate)
+        x += 60
+    board.squares.append(rank_squares)
+    y -= 60
+    x -= 8*60
 
 screen.blit(b_rook,(91,91))
 screen.blit(b_knight,(148,87))
@@ -122,11 +118,16 @@ screen.blit(w_pawn,(454,454))
 screen.blit(w_pawn,(514,454))
 pygame.display.flip()
 
+#test rect
+# a1 = pygame.Surface((60,60))
+# a1_rect = a1.get_rect()
+# a1.fill((0,0,0))
+# screen.blit(a1, (80, 501))
 
-rect = Rect(80,81,60,60)
-rect2 = Rect(140,81,60,60)
-pygame.draw.rect(screen,(255,0,0),rect)
-pygame.draw.rect(screen,(0,0,255),rect2)
+# rect = Rect(80,81,60,60)
+# rect2 = Rect(140,81,60,60)
+# pygame.draw.rect(screen,(255,0,0),rect)
+# pygame.draw.rect(screen,(0,0,255),rect2)
 pygame.display.flip()
 
 while True:
@@ -134,3 +135,9 @@ while True:
         if event.type == QUIT:
             pygame.quit()
             exit(0)
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            for rank in board.squares:
+                for sq in rank:
+                    if sq.rect.collidepoint(event.pos):
+                        print(sq.point)
