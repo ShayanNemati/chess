@@ -10,44 +10,15 @@ class Screen:
         pygame.display.set_caption("chess")
         pygame.display.set_icon(pygame.image.load("image/favicon.png"))
 
-class Chessboard:
-
-    squares = []
-    files = ['a','b','c','d','e','f','g','h']
-
-    def __init__(self, w, h):
-        self.surf = pygame.transform.rotozoom(pygame.image.load("image/board.jpg").convert(), 0, 0.4)
-        self.rect = self.surf.get_rect()
-        self.rect.center = w//2, h//2 
-
-class Square(Chessboard):
-    
-    def __init__(self, coordinate, point):
-        self.coordinate = coordinate
-        self.point = point
-        self.surf = pygame.Surface((60,60))
-        self.rect = self.surf.get_rect(topleft=self.coordinate)
-        #color of square
-        if (self.point[0]+self.point[1]) % 2 == 0:
-            self.surf.fill((125, 148, 93))
-            # self.surf.fill((0, 0, 0))
-        else:
-            self.surf.fill((238, 238, 213))
-            # self.surf.fill((255, 255, 255))
-
-    def __str__(self):
-        return self.files[self.point[1]-1] + str(self.point[0])
-        
-
-class Piece:
+class Piece(Screen):
     """This is a MOTHER class for all the pieces"""
     
     color_name = ("Black", "White")
     move_history = []
     
-    def __init__(self,color_id,square):
+    def __init__(self, color_id, current_square):
         self.color = self.color_name[color_id]
-        self.square = square
+        self.current_square = current_square
 
     def show_legal_moves(self):
         pass
@@ -68,13 +39,13 @@ class Pawn(Piece):
     """This is the son class for the pawn"""
     value = 1
 
-    def __init__(self,color,square):
-        super().__init__(color,square)
+    def __init__(self, color, current_square):
+        super().__init__(color, current_square)
         if color == 1:
-            self.image = pygame.image.load("image/w_pawn.png").convert()
+            self.surf = pygame.image.load("image/w_pawn.png").convert()
         else:
-            self.image = pygame.image.load("image/b_pawn.png").convert()
-        self.image = pygame.transform.rotozoom(self.image ,0, 0.4)
+            self.surf = pygame.image.load("image/b_pawn.png").convert()
+        self.surf = pygame.transform.rotozoom(self.surf ,0, 0.4)
     
     def en_passant(self):
         pass
@@ -86,51 +57,210 @@ class Rook(Piece):
     """This is the son class for the rook"""
     value = 5
     
-    def __init__(self,color,square):
-        super().__init__(color,square)
+    def __init__(self, color, current_square):
+        super().__init__(color, current_square)
         if color == 1:
-            self.image = pygame.image.load("image/w_rook.png").convert()
+            self.surf = pygame.image.load("image/w_rook.png").convert()
         else:
-            self.image = pygame.image.load("image/b_rook.png").convert()
-        self.image = pygame.transform.rotozoom(self.image, 0, 0.4)
+            self.surf = pygame.image.load("image/b_rook.png").convert()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
 class Knight(Piece):
     """This is the son class for the knight"""
     value = 3
 
-    def __init__(self,color,square):
-        super().__init__(color,square)
+    def __init__(self, color, current_square):
+        super().__init__(color, current_square)
         if color == 1:
-            self.image = pygame.image.load("image/w_knight.png").convert()
+            self.surf = pygame.image.load("image/w_knight.png").convert()
         else:
-            self.image = pygame.image.load("image/b_knight.png").convert()
-        self.image = pygame.transform.rotozoom(self.image, 0, 0.4)
+            self.surf = pygame.image.load("image/b_knight.png").convert()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
 class Bishop(Piece):
     """This is the son class for the bishop"""
     value = 3
 
-    def __init__(self,color,square):
-        super().__init__(color,square)
+    def __init__(self, color, current_square):
+        super().__init__(color, current_square)
         if color == 1:
-            self.image = pygame.image.load("image/w_bishop.png").convert()
+            self.surf = pygame.image.load("image/w_bishop.png").convert()
         else:
-            self.image = pygame.image.load("image/b_bishop.png").convert()
-        self.image = pygame.transform.rotozoom(self.image, 0, 0.4)
+            self.surf = pygame.image.load("image/b_bishop.png").convert()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
 class Queen(Piece):
     """This is the son class for the queen"""
     value = 9
 
-    def __init__(self,color,square):
-        super().__init__(color,square)
+    def __init__(self, color, current_square):
+        super().__init__(color, current_square)
         if color == 1:
-            self.image = pygame.image.load("image/w_queen.png").convert()
+            self.surf = pygame.image.load("image/w_queen.png").convert()
         else:
-            self.image = pygame.image.load("image/b_queen.png").convert()
-        self.image = pygame.transform.rotozoom(self.image, 0, 0.4)
+            self.surf = pygame.image.load("image/b_queen.png").convert()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
 class King(Piece):
     """This is the son class for the king"""
+
+    def __init__(self, color, current_square):
+        super().__init__(color, current_square)
+        if color == 1:
+            self.surf = pygame.image.load("image/w_king.png").convert()
+        else:
+            self.surf = pygame.image.load("image/b_king.png").convert()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
+
+    def castle(self):
+        pass
+
+class Chessboard(Screen):
+
+    files = ['a','b','c','d','e','f','g','h']
+    squares = []
+    pieces = {}
+
+    def __init__(self, w, h):
+        self.surf = pygame.transform.rotozoom(pygame.image.load("image/board.jpg").convert(), 0, 0.4)
+        self.rect = self.surf.get_rect(center=(w//2, h//2 ))
+        # self.rect.center = w//2, h//2 
+
+    def blit_pieces(self, screen):
+        for color in self.pieces:
+            for type in self.pieces[color]:
+                for piece in self.pieces[color][type]:
+                    # corner_coordinate = self.squares[piece.current_square[0]-1][piece.current_square[1]-1].coordinate
+                    # piece_coordinate = (corner_coordinate[0]+10, corner_coordinate[1]+10)
+                    screen.blit(piece.surf, piece.coordinate)
+
+class Square(Chessboard):
+    
+    def __init__(self, point, coordinate):
+        self.coordinate = coordinate
+        self.point = point
+        self.surf = pygame.Surface((60,60))
+        self.rect = self.surf.get_rect(topleft=self.coordinate)
+        self.default_color()
+
+    def __str__(self):
+        return self.files[self.point[1]-1] + str(self.point[0])
+        
+    def default_color(self):
+        if (self.point[0]+self.point[1]) % 2 == 0:
+            self.surf.fill((125, 148, 93))
+            # pygame.draw.circle(self.surf, (99, 128, 70), (self.surf.get_width()//2, self.surf.get_height()//2), 10, 0)
+            # pygame.draw.circle(self.surf, (99, 128, 70), (self.surf.get_width()//2, self.surf.get_height()//2), 30, 5)
+        else:
+            self.surf.fill((238, 238, 213))
+            # pygame.draw.circle(self.surf, (202, 203, 179), (self.surf.get_width()//2, self.surf.get_height()//2), 10, 0)
+            # pygame.draw.circle(self.surf, (202, 203, 179), (self.surf.get_width()//2, self.surf.get_height()//2), 30, 5)
+    
+    # def change_color(self, color):
+    #     self.surf.fill(color)
+
+class Piece(Screen):
+    """This is a MOTHER class for all the pieces"""
+    
+    color_name = ("Black", "White")
+    move_history = []
+    
+    def __init__(self, color_id, current_square, coordinate):
+        self.color = self.color_name[color_id]
+        self.current_square = current_square
+        self.coordinate = coordinate
+
+    def show_legal_moves(self):
+        pass
+    
+    def move(self):
+        pass
+    
+    def legal_move_or_not(self):
+        pass
+    
+    def capture(self):
+        pass
+    
+    def king_check(self):
+        pass
+
+class Pawn(Piece):
+    """This is the son class for the pawn"""
+    value = 1
+
+    def __init__(self ,color, current_square, coordinate):
+        super().__init__(color, current_square, coordinate)
+        if color == 1:
+            self.surf = pygame.image.load("image/w_pawn.png").convert_alpha()
+        else:
+            self.surf = pygame.image.load("image/b_pawn.png").convert_alpha()
+        self.surf = pygame.transform.rotozoom(self.surf ,0, 0.4)
+    
+    def en_passant(self):
+        pass
+    
+    def promotion(self):
+        pass
+
+class Rook(Piece):
+    """This is the son class for the rook"""
+    value = 5
+    
+    def __init__(self, color, current_square, coordinate):
+        super().__init__(color, current_square, coordinate)
+        if color == 1:
+            self.surf = pygame.image.load("image/w_rook.png").convert_alpha()
+        else:
+            self.surf = pygame.image.load("image/b_rook.png").convert_alpha()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
+
+class Knight(Piece):
+    """This is the son class for the knight"""
+    value = 3
+
+    def __init__(self, color, current_square, coordinate):
+        super().__init__(color, current_square, coordinate)
+        if color == 1:
+            self.surf = pygame.image.load("image/w_knight.png").convert_alpha()
+        else:
+            self.surf = pygame.image.load("image/b_knight.png").convert_alpha()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
+
+class Bishop(Piece):
+    """This is the son class for the bishop"""
+    value = 3
+
+    def __init__(self, color, current_square, coordinate):
+        super().__init__(color, current_square, coordinate)
+        if color == 1:
+            self.surf = pygame.image.load("image/w_bishop.png").convert_alpha()
+        else:
+            self.surf = pygame.image.load("image/b_bishop.png").convert_alpha()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
+
+class Queen(Piece):
+    """This is the son class for the queen"""
+    value = 9
+
+    def __init__(self, color, current_square, coordinate):
+        super().__init__(color, current_square, coordinate)
+        if color == 1:
+            self.surf = pygame.image.load("image/w_queen.png").convert_alpha()
+        else:
+            self.surf = pygame.image.load("image/b_queen.png").convert_alpha()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
+
+class King(Piece):
+    """This is the son class for the king"""
+
+    def __init__(self, color, current_square, coordinate):
+        super().__init__(color, current_square, coordinate)
+        if color == 1:
+            self.surf = pygame.image.load("image/w_king.png").convert_alpha()
+        else:
+            self.surf = pygame.image.load("image/b_king.png").convert_alpha()
+        self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
+
     def castle(self):
         pass
