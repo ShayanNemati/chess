@@ -25,7 +25,7 @@ y = 501
 for rank in range(1,9):
     rank_squares = []
     for file in range(1,9):
-        square = Square((rank, file), (x, y))
+        square = Square((rank, file), (x, y), None)
         rank_squares.append(square)
         screen.blit(square.surf, square.coordinate)
         x += 60
@@ -52,44 +52,16 @@ board.pieces = {
         }
     }
 
-#load white peice image
-# screen.blit(b_rook,(91,91))
-# screen.blit(b_knight,(148,87))
-# screen.blit(b_bishop,(212,86))
-# screen.blit(b_queen,(266,86))
-# screen.blit(b_king,(327,84))
-# screen.blit(b_bishop,(392,86))
-# screen.blit(b_knight,(447,87))
-# screen.blit(b_rook,(513,91))
-
-# screen.blit(b_pawn,(94,154))
-# screen.blit(b_pawn,(154,154))
-# screen.blit(b_pawn,(214,154))
-# screen.blit(b_pawn,(274,154))
-# screen.blit(b_pawn,(334,154))
-# screen.blit(b_pawn,(394,154))
-# screen.blit(b_pawn,(454,154))
-# screen.blit(b_pawn,(514,154))
+for color in board.pieces:
+    for type in board.pieces[color]:
+        for piece in board.pieces[color][type]:
+            board.squares[piece.current_square[0]-1][piece.current_square[1]-1].piece = piece
+            
+# for rank in board.squares:
+#     for sq in rank:
+#         print(sq.piece)
 
 
-
-# screen.blit(w_rook,(91,512))
-# screen.blit(w_knight,(148,508))
-# screen.blit(w_bishop,(212,507))
-# screen.blit(w_queen,(266,507))
-# screen.blit(w_king,(327,505))
-# screen.blit(w_bishop,(392,507))
-# screen.blit(w_knight,(447,508))
-# screen.blit(w_rook,(513,512))
-
-# screen.blit(w_pawn,(94,454))
-# screen.blit(w_pawn,(154,454))
-# screen.blit(w_pawn,(214,454))
-# screen.blit(w_pawn,(274,454))
-# screen.blit(w_pawn,(334,454))
-# screen.blit(w_pawn,(394,454))
-# screen.blit(w_pawn,(454,454))
-# screen.blit(w_pawn,(514,454))
 board.blit_pieces(screen)
 pygame.display.flip()
 
@@ -113,6 +85,7 @@ while True:
                         else:
                             sq.surf.fill((245, 246, 130))
                         screen.blit(sq.surf, sq.coordinate)
+                        print(sq.piece.color + ' ' + str(sq.piece))
             board.blit_pieces(screen)
             pygame.display.flip()
         
