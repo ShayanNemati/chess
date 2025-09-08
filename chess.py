@@ -16,8 +16,8 @@ start_game = pygame.mixer.Sound('sound/game-start.mp3')
 #load chessboard
 board = Chessboard(width, height)
 
+#fill screen color
 screen.fill((40,40,40))
-# screen.blit(board.surf,((width-board.surf.get_width())/2,(height-board.surf.get_height())/2))
 
 #define squares
 x = 80
@@ -26,6 +26,7 @@ for rank in range(1,9):
     rank_squares = []
     for file in range(1,9):
         square = Square((rank, file), (x, y), None)
+        square.default_color(screen)
         rank_squares.append(square)
         screen.blit(square.surf, square.coordinate)
         x += 60
@@ -33,6 +34,7 @@ for rank in range(1,9):
     y -= 60
     x -= 8*60
 
+#define peice
 board.pieces = {
         'white': {
             "pawn": [Pawn(1, (2,i), (94+(i-1)*60,454)) for i in range(1,9)],
@@ -52,40 +54,29 @@ board.pieces = {
         }
     }
 
+#insert peice in squares
 for color in board.pieces:
     for type in board.pieces[color]:
         for piece in board.pieces[color][type]:
             board.squares[piece.current_square[0]-1][piece.current_square[1]-1].piece = piece
-            
-# for rank in board.squares:
-#     for sq in rank:
-#         print(sq.piece)
-
 
 board.blit_pieces(screen)
+start_game.play()
 pygame.display.flip()
 
 #start chess
-start_game.play()
-
 while True:
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             exit(0)
-
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            board.blit_chessboard(screen)
             for rank in board.squares:
                 for sq in rank:
-                    sq.default_color()
-                    screen.blit(sq.surf, sq.coordinate)
                     if sq.rect.collidepoint(event.pos):
-                        if (sq.point[0]+sq.point[1]) % 2 == 0:
-                            sq.surf.fill((185, 202, 67))
-                        else:
-                            sq.surf.fill((245, 246, 130))
-                        screen.blit(sq.surf, sq.coordinate)
-                        print(sq.piece.color + ' ' + str(sq.piece))
+                        if sq.piece != None:
+                            sq.highlight_square(screen)
+                            sq.piece.show_legal_moves(screen, board)
             board.blit_pieces(screen)
             pygame.display.flip()
-        

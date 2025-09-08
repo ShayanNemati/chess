@@ -18,15 +18,18 @@ class Chessboard(Screen):
 
     def __init__(self, w, h):
         self.surf = pygame.transform.rotozoom(pygame.image.load("image/board.jpg").convert(), 0, 0.4)
-        self.rect = self.surf.get_rect(center=(w//2, h//2 ))
-        # self.rect.center = w//2, h//2 
+        self.rect = self.surf.get_rect(center=(w//2, h//2))
+
+    def blit_chessboard(self, screen):
+        for rank in self.squares:
+                for sq in rank:
+                    sq.default_color(screen)
+                    # screen.blit(sq.surf, sq.coordinate)
 
     def blit_pieces(self, screen):
         for color in self.pieces:
             for type in self.pieces[color]:
                 for piece in self.pieces[color][type]:
-                    # corner_coordinate = self.squares[piece.current_square[0]-1][piece.current_square[1]-1].coordinate
-                    # piece_coordinate = (corner_coordinate[0]+10, corner_coordinate[1]+10)
                     screen.blit(piece.surf, piece.coordinate)
 
 class Square(Chessboard):
@@ -37,36 +40,52 @@ class Square(Chessboard):
         self.piece = piece
         self.surf = pygame.Surface((60,60))
         self.rect = self.surf.get_rect(topleft=self.coordinate)
-        self.default_color()
 
     def __str__(self):
         return self.files[self.point[1]-1] + str(self.point[0])
         
-    def default_color(self):
+    def default_color(self, screen):
         if (self.point[0]+self.point[1]) % 2 == 0:
             self.surf.fill((125, 148, 93))
-            # pygame.draw.circle(self.surf, (99, 128, 70), (self.surf.get_width()//2, self.surf.get_height()//2), 10, 0)
-            # pygame.draw.circle(self.surf, (99, 128, 70), (self.surf.get_width()//2, self.surf.get_height()//2), 30, 5)
         else:
             self.surf.fill((238, 238, 213))
-            # pygame.draw.circle(self.surf, (202, 203, 179), (self.surf.get_width()//2, self.surf.get_height()//2), 10, 0)
-            # pygame.draw.circle(self.surf, (202, 203, 179), (self.surf.get_width()//2, self.surf.get_height()//2), 30, 5)
+        screen.blit(self.surf, self.coordinate)
     
-    # def change_color(self, color):
-    #     self.surf.fill(color)
+    def highlight_square(self, screen):
+        if (self.point[0]+self.point[1]) % 2 == 0:
+            self.surf.fill((185, 202, 67))
+        else:
+            self.surf.fill((245, 246, 130))
+        screen.blit(self.surf, self.coordinate)
+
+    def show_move_marker(self, screen):
+        if (self.point[0]+self.point[1]) % 2 == 0:
+            pygame.draw.circle(self.surf, (99, 128, 70), (self.surf.get_width()//2, self.surf.get_height()//2), 10, 0)
+        else:
+            pygame.draw.circle(self.surf, (202, 203, 179), (self.surf.get_width()//2, self.surf.get_height()//2), 10, 0)
+        screen.blit(self.surf, self.coordinate)
+
+    def show_capture_marker(self, screen):
+        if (self.point[0]+self.point[1]) % 2 == 0:
+            pygame.draw.circle(self.surf, (99, 128, 70), (self.surf.get_width()//2, self.surf.get_height()//2), 30, 5)
+        else:
+            pygame.draw.circle(self.surf, (202, 203, 179), (self.surf.get_width()//2, self.surf.get_height()//2), 30, 5)
+        screen.blit(self.surf, self.coordinate)
 
 class Piece(Screen):
     """This is a MOTHER class for all the pieces"""
     
     color_name = ("Black", "White")
     move_history = []
+    legal_squares = []
     
     def __init__(self, color_id, current_square, coordinate):
+        self.color_id = color_id
         self.color = self.color_name[color_id]
         self.current_square = current_square
         self.coordinate = coordinate
 
-    def show_legal_moves(self):
+    def show_legal_moves(self, screen, chessboard):
         pass
     
     def move(self):
@@ -93,6 +112,22 @@ class Pawn(Piece):
             self.surf = pygame.image.load("image/b_pawn.png").convert_alpha()
         self.surf = pygame.transform.rotozoom(self.surf ,0, 0.4)
     
+    def show_legal_moves(self, screen, chessboard):
+
+        self.legal_squares.clear()
+
+        if len(self.move_history) == 0:
+            if self.color_id == 0:
+                self.legal_squares.append(chessboard.squares[self.current_square[0]-2][self.current_square[1]-1])
+                self.legal_squares.append(chessboard.squares[self.current_square[0]-3][self.current_square[1]-1])  
+            else:
+                self.legal_squares.append(chessboard.squares[self.current_square[0]][self.current_square[1]-1])
+                self.legal_squares.append(chessboard.squares[self.current_square[0]+1][self.current_square[1]-1])
+
+        for sq in self.legal_squares:
+            sq.show_move_marker(screen)
+            # screen.blit(sq.surf, sq.coordinate)
+
     def en_passant(self):
         pass
     
