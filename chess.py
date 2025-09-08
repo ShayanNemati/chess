@@ -1,38 +1,40 @@
+"""This is the main file for our chess game"""
 import pygame
+#! wild card imports shuold be fixed at the end later
 from pygame.locals import *
 from classes import *
 
-pygame.init()
+pygame.init() #pygame init does not exists error?!!!!
 pygame.mixer.init()
 
 #display window
-width = 640
-height = 640
-screen = Screen(width, height).screen
+WIDTH = 640
+HEIGHT = 640
+screen = Screen(WIDTH, HEIGHT).screen
 
 #sounds
 start_game = pygame.mixer.Sound('sound/game-start.mp3')
 
 #load chessboard
-board = Chessboard(width, height)
+board = Chessboard(WIDTH, HEIGHT)
 
 #fill screen color
 screen.fill((40,40,40))
 
 #define squares
-x = 80
-y = 501
+X = 80
+Y = 501
 for rank in range(1,9):
     rank_squares = []
     for file in range(1,9):
-        square = Square((rank, file), (x, y), None)
+        square = Square((rank, file), (X, Y), None)
         square.default_color(screen)
         rank_squares.append(square)
         screen.blit(square.surf, square.coordinate)
-        x += 60
+        X += 60
     board.squares.append(rank_squares)
-    y -= 60
-    x -= 8*60
+    Y -= 60
+    X -= 8*60
 
 #define peice
 board.pieces = {
@@ -54,10 +56,10 @@ board.pieces = {
         }
     }
 
-#insert peice in squares
+#insert peice in squares , #mishe ba .items behtar iterate kard?
 for color in board.pieces:
-    for type in board.pieces[color]:
-        for piece in board.pieces[color][type]:
+    for typee in board.pieces[color]:
+        for piece in board.pieces[color][typee]:
             board.squares[piece.current_square[0]-1][piece.current_square[1]-1].piece = piece
 
 board.blit_pieces(screen)
@@ -75,7 +77,7 @@ while True:
             for rank in board.squares:
                 for sq in rank:
                     if sq.rect.collidepoint(event.pos):
-                        if sq.piece != None:
+                        if sq.piece is not None:
                             sq.highlight_square(screen)
                             sq.piece.show_legal_moves(screen, board)
             board.blit_pieces(screen)
