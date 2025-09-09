@@ -83,16 +83,21 @@ class Piece(Screen):
     move_history = []
     legal_squares = []
 
-    def __init__(self, color_id, current_square, coordinate):
+    def __init__(self, color_id, current_point, coordinate):
         self.color_id = color_id
         self.color = self.color_name[color_id]
-        self.current_square = current_square
+        self.current_point = current_point
         self.coordinate = coordinate
 
+    #this method define in inherited class
     def show_legal_moves(self, screen, chessboard):
         pass
-    def move(self):
-        pass
+
+    def move(self, move_square):
+        destance_points = (move_square.point[0] - self.current_point[0], move_square.point[1] - self.current_point[1])
+        self.current_point = move_square.point
+        self.coordinate = (self.coordinate[0] + 60*destance_points[1], self.coordinate[1] - 60*destance_points[0])
+        move_square.piece = self
 
     def legal_move_or_not(self):
         pass
@@ -107,24 +112,25 @@ class Pawn(Piece):
     """This is the son class for the pawn"""
     value = 1
 
-    def __init__(self ,color, current_square, coordinate):
-        super().__init__(color, current_square, coordinate)
+    def __init__(self ,color, current_point, coordinate):
+        super().__init__(color, current_point, coordinate)
         if color == 1:
             self.surf = pygame.image.load("image/w_pawn.png").convert_alpha()
         else:
             self.surf = pygame.image.load("image/b_pawn.png").convert_alpha()
         self.surf = pygame.transform.rotozoom(self.surf ,0, 0.4)
+        
     def show_legal_moves(self, screen, chessboard):
 
         self.legal_squares.clear()
 
         if len(self.move_history) == 0:
             if self.color_id == 0:
-                self.legal_squares.append(chessboard.squares[self.current_square[0]-2][self.current_square[1]-1])
-                self.legal_squares.append(chessboard.squares[self.current_square[0]-3][self.current_square[1]-1])
+                self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]-1])
+                self.legal_squares.append(chessboard.squares[self.current_point[0]-3][self.current_point[1]-1])
             else:
-                self.legal_squares.append(chessboard.squares[self.current_square[0]][self.current_square[1]-1])
-                self.legal_squares.append(chessboard.squares[self.current_square[0]+1][self.current_square[1]-1])
+                self.legal_squares.append(chessboard.squares[self.current_point[0]][self.current_point[1]-1])
+                self.legal_squares.append(chessboard.squares[self.current_point[0]+1][self.current_point[1]-1])
 
         for sq in self.legal_squares:
             sq.show_move_marker(screen)
@@ -142,8 +148,8 @@ class Pawn(Piece):
 class Rook(Piece):
     """This is the son class for the rook"""
     value = 5
-    def __init__(self, color, current_square, coordinate):
-        super().__init__(color, current_square, coordinate)
+    def __init__(self, color, current_point, coordinate):
+        super().__init__(color, current_point, coordinate)
         if color == 1:
             self.surf = pygame.image.load("image/w_rook.png").convert_alpha()
         else:
@@ -154,14 +160,14 @@ class Rook(Piece):
 
         self.legal_squares.clear()
 
-        for i in range(self.current_square[0] - 2, -1, -1):
-            self.legal_squares.append(chessboard.squares[i][self.current_square[1] - 1])
-        for i in range(self.current_square[0], 8):
-            self.legal_squares.append(chessboard.squares[i][self.current_square[1] - 1])
-        for j in range(self.current_square[1] - 2, -1, -1):
-            self.legal_squares.append(chessboard.squares[self.current_square[0] - 1][j])
-        for j in range(self.current_square[1], 8):
-            self.legal_squares.append(chessboard.squares[self.current_square[0] - 1][j])
+        for i in range(self.current_point[0] - 2, -1, -1):
+            self.legal_squares.append(chessboard.squares[i][self.current_point[1] - 1])
+        for i in range(self.current_point[0], 8):
+            self.legal_squares.append(chessboard.squares[i][self.current_point[1] - 1])
+        for j in range(self.current_point[1] - 2, -1, -1):
+            self.legal_squares.append(chessboard.squares[self.current_point[0] - 1][j])
+        for j in range(self.current_point[1], 8):
+            self.legal_squares.append(chessboard.squares[self.current_point[0] - 1][j])
 
         for sq in self.legal_squares:
             sq.show_move_marker(screen)
@@ -173,8 +179,8 @@ class Knight(Piece):
     """This is the son class for the knight"""
     value = 3
 
-    def __init__(self, color, current_square, coordinate):
-        super().__init__(color, current_square, coordinate)
+    def __init__(self, color, current_point, coordinate):
+        super().__init__(color, current_point, coordinate)
         if color == 1:
             self.surf = pygame.image.load("image/w_knight.png").convert_alpha()
         else:
@@ -184,7 +190,7 @@ class Knight(Piece):
     def show_legal_moves(self, screen, chessboard):
 
         self.legal_squares.clear()
-        col , row = self.current_square[0] - 1 ,  self.current_square[1] - 1
+        col , row = self.current_point[0] - 1 ,  self.current_point[1] - 1
         moves = [
             (col - 2, row - 1), (col - 2, row + 1),
             (col - 1, row - 2), (col - 1, row + 2),
@@ -206,8 +212,8 @@ class Bishop(Piece):
     """This is the son class for the bishop"""
     value = 3
 
-    def __init__(self, color, current_square, coordinate):
-        super().__init__(color, current_square, coordinate)
+    def __init__(self, color, current_point, coordinate):
+        super().__init__(color, current_point, coordinate)
         if color == 1:
             self.surf = pygame.image.load("image/w_bishop.png").convert_alpha()
         else:
@@ -218,25 +224,25 @@ class Bishop(Piece):
 
         self.legal_squares.clear()
 
-        r, c = self.current_square[0] - 2, self.current_square[1] - 2
+        r, c = self.current_point[0] - 2, self.current_point[1] - 2
         while r >= 0 and c >= 0:
             self.legal_squares.append(chessboard.squares[r][c])
             r -= 1
             c -= 1
 
-        r, c = self.current_square[0] - 2, self.current_square[1]
+        r, c = self.current_point[0] - 2, self.current_point[1]
         while r >= 0 and c < 8:
             self.legal_squares.append(chessboard.squares[r][c])
             r -= 1
             c += 1
 
-        r, c = self.current_square[0], self.current_square[1] - 2
+        r, c = self.current_point[0], self.current_point[1] - 2
         while r < 8 and c >= 0:
             self.legal_squares.append(chessboard.squares[r][c])
             r += 1
             c -= 1
 
-        r, c = self.current_square[0], self.current_square[1]
+        r, c = self.current_point[0], self.current_point[1]
         while r < 8 and c < 8:
             self.legal_squares.append(chessboard.squares[r][c])
             r += 1
@@ -252,8 +258,8 @@ class Queen(Piece):
     """This is the son class for the queen"""
     value = 9
 
-    def __init__(self, color, current_square, coordinate):
-        super().__init__(color, current_square, coordinate)
+    def __init__(self, color, current_point, coordinate):
+        super().__init__(color, current_point, coordinate)
         if color == 1:
             self.surf = pygame.image.load("image/w_queen.png").convert_alpha()
         else:
@@ -263,7 +269,7 @@ class Queen(Piece):
     def show_legal_moves(self, screen, chessboard):
 
         self.legal_squares.clear()
-        row, col = self.current_square[0], self.current_square[1]
+        row, col = self.current_point[0], self.current_point[1]
 
         for i in range(row - 2, -1, -1):
             self.legal_squares.append(chessboard.squares[i][col - 1])
@@ -308,8 +314,8 @@ class King(Piece):
     """This is the son class for the king"""
     value = 0
 
-    def __init__(self, color, current_square, coordinate):
-        super().__init__(color, current_square, coordinate)
+    def __init__(self, color, current_point, coordinate):
+        super().__init__(color, current_point, coordinate)
         if color == 1:
             self.surf = pygame.image.load("image/w_king.png").convert_alpha()
         else:
@@ -319,7 +325,7 @@ class King(Piece):
     def show_legal_moves(self, screen, chessboard):
 
         self.legal_squares.clear()
-        row, col = self.current_square[0] - 1, self.current_square[1] - 1
+        row, col = self.current_point[0] - 1, self.current_point[1] - 1
         moves = [
             (row - 1, col - 1), (row - 1, col), (row - 1, col + 1),
             (row, col - 1),                     (row, col + 1),
