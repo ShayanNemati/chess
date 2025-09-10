@@ -89,7 +89,6 @@ while True:
                             SELECTED_SQUARE = sq
                             SELECTED_SQUARE.highlight_square(screen)
                             SELECTED_SQUARE.piece.show_legal_moves(screen, board)
-                            print(SELECTED_SQUARE)
                         elif (sq.piece is None) and (SELECTED_SQUARE is not None) and (sq in SELECTED_SQUARE.piece.legal_squares):
                             SELECTED_SQUARE.piece.move(sq)
                             move.play()
