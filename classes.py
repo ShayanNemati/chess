@@ -28,16 +28,19 @@ class Chessboard(Screen):
                 sq.default_color(screen)
                 # screen.blit(sq.surf, sq.coordinate)
 
-#mishe inja ham az .items estefade kard?
     def blit_pieces(self, screen):
         """for bliting pieaces"""
-        for color in self.pieces:
-            for typee in self.pieces[color]:
-                for piece in self.pieces[color][typee]:
+        # for color in self.pieces:
+        #     for typee in self.pieces[color]:
+        #         for piece in self.pieces[color][typee]:
+        #             screen.blit(piece.surf, piece.coordinate)
+        for color, type_dict in self.pieces.items():
+            for typee, pieces in type_dict.items():
+                for piece in pieces:
                     screen.blit(piece.surf, piece.coordinate)
 
 class Square(Chessboard):
-    """This is The square Class whihc inherits from Chessboeard class"""
+    """This is The square Class which inherits from Chessboeard class"""
     def __init__(self, point, coordinate, piece):
         self.point = point
         self.coordinate = coordinate

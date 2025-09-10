@@ -57,17 +57,22 @@ board.pieces = {
         }
     }
 
-#insert peice in squares , #mishe ba .items behtar iterate kard?
-for color in board.pieces:
-    for typee in board.pieces[color]:
-        for piece in board.pieces[color][typee]:
+# for color in board.pieces:
+#     for typee in board.pieces[color]:
+#         for piece in board.pieces[color][typee]:
+#             board.squares[piece.current_point[0]-1][piece.current_point[1]-1].piece = piece
+
+for color, type_dict in board.pieces.items():
+    for typee, pieces in type_dict.items():
+        for piece in pieces:
             board.squares[piece.current_point[0]-1][piece.current_point[1]-1].piece = piece
+
 
 board.blit_pieces(screen)
 start_game.play()
 pygame.display.flip()
 
-selected_square = None
+SELECTED_SQUARE = None
 
 #start chess
 while True:
@@ -81,15 +86,15 @@ while True:
                 for sq in rank:
                     if sq.rect.collidepoint(event.pos):
                         if sq.piece is not None:
-                            selected_square = sq
-                            selected_square.highlight_square(screen)
-                            selected_square.piece.show_legal_moves(screen, board)
-                            print(selected_square)
-                        elif sq.piece is None and selected_square is not None:
-                            selected_square.piece.move(sq)
+                            SELECTED_SQUARE = sq
+                            SELECTED_SQUARE.highlight_square(screen)
+                            SELECTED_SQUARE.piece.show_legal_moves(screen, board)
+                            print(SELECTED_SQUARE)
+                        elif (sq.piece is None) and (SELECTED_SQUARE is not None) and (sq in SELECTED_SQUARE.piece.legal_squares):
+                            SELECTED_SQUARE.piece.move(sq)
                             move.play()
-                            selected_square.piece = None
-                            selected_square = None
+                            SELECTED_SQUARE.piece = None
+                            SELECTED_SQUARE = None
 
             board.blit_pieces(screen)
             pygame.display.flip()
