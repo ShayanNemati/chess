@@ -91,6 +91,7 @@ class Piece:
         self.coordinate = coordinate
         self.move_history = []
         self.legal_squares = []
+        self.legal_squares2 = []
 
     #this method define in inherited class
     def show_legal_moves(self, screen, chessboard):
@@ -105,8 +106,25 @@ class Piece:
     def legal_move_or_not(self):
         pass
 
-    def capture(self):
-        pass
+    def capture(self, capture_square, chessboard):
+        # First remove the captured piece
+        if capture_square.piece is not None:
+            captured_piece = capture_square.piece
+            color = "white" if captured_piece.color_id == 1 else "black"
+            
+            # Remove from pieces dictionary
+            for piece_type in chessboard.pieces[color]:
+                if captured_piece in chessboard.pieces[color][piece_type]:
+                    chessboard.pieces[color][piece_type].remove(captured_piece)
+                    break
+            
+            # Optional: store captured piece for display or undo functionality
+            if not hasattr(chessboard, 'captured_pieces'):
+                chessboard.captured_pieces = []
+            chessboard.captured_pieces.append(captured_piece)
+        
+        # Then use the existing move logic
+        self.move(capture_square)
 
     def king_check(self):
         pass
@@ -125,21 +143,48 @@ class Pawn(Piece):
 
     def show_legal_moves(self, screen, chessboard):
         self.legal_squares.clear()
-
-        if self.color_id == 0 and self.current_point[0] == 7:
-            self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]-1])
-            self.legal_squares.append(chessboard.squares[self.current_point[0]-3][self.current_point[1]-1])
-        elif self.color_id == 1 and self.current_point[0] == 2:
-            self.legal_squares.append(chessboard.squares[self.current_point[0]][self.current_point[1]-1])
-            self.legal_squares.append(chessboard.squares[self.current_point[0]+1][self.current_point[1]-1])
-        elif self.color_id == 0:
-            self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]-1])
-        elif self.color_id == 1:
-            self.legal_squares.append(chessboard.squares[self.current_point[0]][self.current_point[1]-1])
-
+        self.legal_squares2.clear()
+        
+        if self.color_id == 0:
+            if self.current_point[0] > 1:
+                forward_square = chessboard.squares[self.current_point[0]-2][self.current_point[1]-1]
+                if forward_square.piece is None:
+                    self.legal_squares.append(forward_square)
+                    
+                    if self.current_point[0] == 7:
+                        two_forward_square = chessboard.squares[self.current_point[0]-3][self.current_point[1]-1]
+                        if two_forward_square.piece is None:
+                            self.legal_squares.append(two_forward_square)
+        
+        else:
+            if self.current_point[0] < 8:
+                forward_square = chessboard.squares[self.current_point[0]][self.current_point[1]-1]
+                if forward_square.piece is None:
+                    self.legal_squares.append(forward_square)
+                    
+                    if self.current_point[0] == 2:
+                        two_forward_square = chessboard.squares[self.current_point[0]+1][self.current_point[1]-1]
+                        if two_forward_square.piece is None:
+                            self.legal_squares.append(two_forward_square)
+        
+        for col_offset in [-1, 1]:
+            capture_col = self.current_point[1] - 1 + col_offset
+            if 0 <= capture_col < 8:
+                if self.color_id == 0:  # Black
+                    capture_row = self.current_point[0] - 2
+                else:  # White
+                    capture_row = self.current_point[0]
+                
+                if 0 <= capture_row < 8:
+                    capture_square = chessboard.squares[capture_row][capture_col]
+                    if (capture_square.piece is not None and capture_square.piece.color_id != self.color_id):
+                        self.legal_squares2.append(capture_square)
+        
+        # Show markers
         for sq in self.legal_squares:
             sq.show_move_marker(screen)
-            # screen.blit(sq.surf, sq.coordinate)
+        for sq in self.legal_squares2:
+            sq.show_capture_marker(screen)
 
     def en_passant(self):
         pass
@@ -162,20 +207,28 @@ class Rook(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-
-        for i in range(self.current_point[0] - 2, -1, -1):
-            self.legal_squares.append(chessboard.squares[i][self.current_point[1] - 1])
-        for i in range(self.current_point[0], 8):
-            self.legal_squares.append(chessboard.squares[i][self.current_point[1] - 1])
-        for j in range(self.current_point[1] - 2, -1, -1):
-            self.legal_squares.append(chessboard.squares[self.current_point[0] - 1][j])
-        for j in range(self.current_point[1], 8):
-            self.legal_squares.append(chessboard.squares[self.current_point[0] - 1][j])
-
-        for sq in self.legal_squares:
-            sq.show_move_marker(screen)
+        current_row, current_col = self.current_point[0] - 1, self.current_point[1] - 1
+        
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        
+        for dr, dc in directions:
+            r, c = current_row + dr, current_col + dc
+            
+            while 0 <= r < 8 and 0 <= c < 8:
+                target_square = chessboard.squares[r][c]
+                
+                if target_square.piece is None:
+                    self.legal_squares.append(target_square)
+                    target_square.show_move_marker(screen)
+                else:
+                    if target_square.piece.color_id != self.color_id:
+                        self.legal_squares.append(target_square)
+                        target_square.show_capture_marker(screen)
+                    break
+                
+                r += dr
+                c += dc
 
     def __str__(self):
         return "Rook"
@@ -193,22 +246,26 @@ class Knight(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-        col , row = self.current_point[0] - 1 ,  self.current_point[1] - 1
+        current_row, current_col = self.current_point[0] - 1, self.current_point[1] - 1
+        
         moves = [
-            (col - 2, row - 1), (col - 2, row + 1),
-            (col - 1, row - 2), (col - 1, row + 2),
-            (col + 1, row - 2), (col + 1, row + 2),
-            (col + 2, row - 1), (col + 2, row + 1)
+            (-2, -1), (-2, 1), (-1, -2), (-1, 2),
+            (1, -2), (1, 2), (2, -1), (2, 1)
         ]
-
-        for r, c in moves:
+        
+        for dr, dc in moves:
+            r, c = current_row + dr, current_col + dc
+            
             if 0 <= r < 8 and 0 <= c < 8:
-                self.legal_squares.append(chessboard.squares[r][c])
-
-        for sq in self.legal_squares:
-            sq.show_move_marker(screen)
+                target_square = chessboard.squares[r][c]
+                
+                if target_square.piece is None:
+                    self.legal_squares.append(target_square)
+                    target_square.show_move_marker(screen)
+                elif target_square.piece.color_id != self.color_id:
+                    self.legal_squares.append(target_square)
+                    target_square.show_capture_marker(screen)
 
     def __str__(self):
         return "Knight"
@@ -226,35 +283,29 @@ class Bishop(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-
-        r, c = self.current_point[0] - 2, self.current_point[1] - 2
-        while r >= 0 and c >= 0:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r -= 1
-            c -= 1
-
-        r, c = self.current_point[0] - 2, self.current_point[1]
-        while r >= 0 and c < 8:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r -= 1
-            c += 1
-
-        r, c = self.current_point[0], self.current_point[1] - 2
-        while r < 8 and c >= 0:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r += 1
-            c -= 1
-
-        r, c = self.current_point[0], self.current_point[1]
-        while r < 8 and c < 8:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r += 1
-            c += 1
-
-        for sq in self.legal_squares:
-            sq.show_move_marker(screen)
+        current_row, current_col = self.current_point[0] - 1, self.current_point[1] - 1
+        
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        
+        for dr, dc in directions:
+            r, c = current_row + dr, current_col + dc
+            
+            while 0 <= r < 8 and 0 <= c < 8:
+                target_square = chessboard.squares[r][c]
+                
+                if target_square.piece is None:
+                    # Empty square
+                    self.legal_squares.append(target_square)
+                    target_square.show_move_marker(screen)
+                else:
+                    if target_square.piece.color_id != self.color_id:
+                        self.legal_squares.append(target_square)
+                        target_square.show_capture_marker(screen)
+                    break
+                
+                r += dr
+                c += dc
 
     def __str__(self):
         return "Bishop"
@@ -272,45 +323,31 @@ class Queen(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-        row, col = self.current_point[0], self.current_point[1]
-
-        for i in range(row - 2, -1, -1):
-            self.legal_squares.append(chessboard.squares[i][col - 1])
-        for i in range(row, 8):
-            self.legal_squares.append(chessboard.squares[i][col - 1])
-        for j in range(col - 2, -1, -1):
-            self.legal_squares.append(chessboard.squares[row - 1][j])
-        for j in range(col, 8):
-            self.legal_squares.append(chessboard.squares[row - 1][j])
-
-        r, c = row - 2, col - 2
-        while r >= 0 and c >= 0:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r -= 1
-            c -= 1
-
-        r, c = row - 2, col
-        while r >= 0 and c < 8:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r -= 1
-            c += 1
-
-        r, c = row, col - 2
-        while r < 8 and c >= 0:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r += 1
-            c -= 1
-
-        r, c = row, col
-        while r < 8 and c < 8:
-            self.legal_squares.append(chessboard.squares[r][c])
-            r += 1
-            c += 1
-
-        for sq in self.legal_squares:
-            sq.show_move_marker(screen)
+        current_row, current_col = self.current_point[0] - 1, self.current_point[1] - 1
+        
+        straight_directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        diagonal_directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        
+        all_directions = straight_directions + diagonal_directions
+        
+        for dr, dc in all_directions:
+            r, c = current_row + dr, current_col + dc
+            
+            while 0 <= r < 8 and 0 <= c < 8:
+                target_square = chessboard.squares[r][c]
+                
+                if target_square.piece is None:
+                    self.legal_squares.append(target_square)
+                    target_square.show_move_marker(screen)
+                else:
+                    if target_square.piece.color_id != self.color_id:
+                        self.legal_squares.append(target_square)
+                        target_square.show_capture_marker(screen)
+                    break
+                
+                r += dr
+                c += dc
 
     def __str__(self):
         return "Queen"
@@ -328,22 +365,27 @@ class King(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-        row, col = self.current_point[0] - 1, self.current_point[1] - 1
+        current_row, current_col = self.current_point[0] - 1, self.current_point[1] - 1
+        
         moves = [
-            (row - 1, col - 1), (row - 1, col), (row - 1, col + 1),
-            (row, col - 1),                     (row, col + 1),
-            (row + 1, col - 1), (row + 1, col), (row + 1, col + 1)
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1),           (0, 1),
+            (1, -1),  (1, 0),  (1, 1)
         ]
-
-        for r, c in moves:
+        
+        for dr, dc in moves:
+            r, c = current_row + dr, current_col + dc
+            
             if 0 <= r < 8 and 0 <= c < 8:
-                self.legal_squares.append(chessboard.squares[r][c])
-
-        for sq in self.legal_squares:
-            sq.show_move_marker(screen)
-
+                target_square = chessboard.squares[r][c]
+                
+                if target_square.piece is None:
+                    self.legal_squares.append(target_square)
+                    target_square.show_move_marker(screen)
+                elif target_square.piece.color_id != self.color_id:
+                    self.legal_squares.append(target_square)
+                    target_square.show_capture_marker(screen)
     def __str__(self):
         return "King"
 

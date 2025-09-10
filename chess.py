@@ -4,7 +4,7 @@ import pygame
 from pygame.locals import *
 from classes import *
 
-pygame.init() #pygame init does not exists error?!!!!
+pygame.init()
 pygame.mixer.init()
 
 #display window
@@ -85,15 +85,21 @@ while True:
             for rank in board.squares:
                 for sq in rank:
                     if sq.rect.collidepoint(event.pos):
-                        if sq.piece is not None:
-                            SELECTED_SQUARE = sq
-                            SELECTED_SQUARE.highlight_square(screen)
-                            SELECTED_SQUARE.piece.show_legal_moves(screen, board)
+                        if (sq.piece is not None) and (SELECTED_SQUARE is not None) and (sq in SELECTED_SQUARE.piece.legal_squares or sq in SELECTED_SQUARE.piece.legal_squares2):
+                            SELECTED_SQUARE.piece.capture(sq , board)
+                            move.play()
+                            SELECTED_SQUARE.piece = None
+                            SELECTED_SQUARE = None
+                            
                         elif (sq.piece is None) and (SELECTED_SQUARE is not None) and (sq in SELECTED_SQUARE.piece.legal_squares):
                             SELECTED_SQUARE.piece.move(sq)
                             move.play()
                             SELECTED_SQUARE.piece = None
                             SELECTED_SQUARE = None
+                        elif sq.piece is not None:
+                            SELECTED_SQUARE = sq
+                            SELECTED_SQUARE.highlight_square(screen)
+                            SELECTED_SQUARE.piece.show_legal_moves(screen, board)
 
             board.blit_pieces(screen)
             pygame.display.flip()
