@@ -15,6 +15,7 @@ screen = Screen(WIDTH, HEIGHT).screen
 #sounds
 start_game = pygame.mixer.Sound('sound/game-start.mp3')
 move = pygame.mixer.Sound('sound/move-self.mp3')
+capture = pygame.mixer.Sound('sound/capture.mp3')
 
 #load chessboard
 board = Chessboard(WIDTH, HEIGHT)
@@ -80,16 +81,39 @@ while True:
             for rank in board.squares:
                 for sq in rank:
                     if sq.rect.collidepoint(event.pos):
-                        if sq.piece is not None:
-                            selected_square = sq
-                            selected_square.highlight_square(screen)
-                            selected_square.piece.show_legal_moves(screen, board)
-                            print(selected_square)
-                        elif sq.piece is None and selected_square is not None:
-                            selected_square.piece.move(sq)
-                            move.play()
-                            selected_square.piece = None
-                            selected_square = None
+                        if selected_square is None:
+                            if sq.piece is not None:
+                                #select square
+                                selected_square = sq
+                                selected_square.highlight_square(screen)
+                                selected_square.piece.show_legal_moves(screen, board)
+                        else:
+                            if sq.piece is not None:
+                                if selected_square.piece.color_id != sq.piece.color_id:
+                                    if sq in selected_square.piece.legal_squares:
+                                        #capture piece
+                                        selected_square.piece.capture(board, sq, capture)
+                                        selected_square.piece = None
+                                        selected_square = None
+                                    else:
+                                        #select square
+                                        selected_square = sq
+                                        selected_square.highlight_square(screen)
+                                        selected_square.piece.show_legal_moves(screen, board)
+                                else:
+                                    #select square
+                                    selected_square = sq
+                                    selected_square.highlight_square(screen)
+                                    selected_square.piece.show_legal_moves(screen, board)
+                            else:
+                                if sq in selected_square.piece.legal_squares:
+                                    #move piece
+                                    selected_square.piece.move(sq, move)
+                                    selected_square.piece = None
+                                    selected_square = None
+                                else:
+                                    selected_square = None
+                                    
 
             board.blit_pieces(screen)
             pygame.display.flip()
