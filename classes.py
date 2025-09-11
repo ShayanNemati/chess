@@ -14,12 +14,12 @@ class Screen:
 class Chessboard(Screen):
     """Defining the chessboard as a class"""
     files = ['a','b','c','d','e','f','g','h']
-    squares = []
-    pieces = {}
 
     def __init__(self, w, h):
         self.surf = pygame.transform.rotozoom(pygame.image.load("image/board.jpg").convert(), 0, 0.4)
         self.rect = self.surf.get_rect(center=(w//2, h//2))
+        self.squares = []
+        self.pieces = {}
 
     def blit_chessboard(self, screen):
         """for bliting the chess board"""
@@ -91,10 +91,6 @@ class Piece(Screen):
         self.coordinate = coordinate
         self.is_move = False
 
-    #this method define in inherited class
-    def show_legal_moves(self, screen, chessboard):
-        pass
-
     def move(self, move_square, sound):
         sound.play()
         destance_points = (move_square.point[0] - self.current_point[0], move_square.point[1] - self.current_point[1])
@@ -136,9 +132,10 @@ class Pawn(Piece):
                 next_square = chessboard.squares[self.current_point[0]-2][self.current_point[1]-1]
                 if next_square.piece is None:
                     self.legal_squares.append(next_square)
-                    if (self.current_point[0] > 2) and (not self.is_move) and (next_square.piece is None):
+                    if self.current_point[0] > 2:
                         next_square = chessboard.squares[self.current_point[0]-3][self.current_point[1]-1]
-                        self.legal_squares.append(chessboard.squares[self.current_point[0]-3][self.current_point[1]-1])
+                        if (not self.is_move) and (next_square.piece is None):
+                            self.legal_squares.append(next_square)
 
             if (self.current_point[0] > 1) and (self.current_point[1] > 1) and (chessboard.squares[self.current_point[0]-2][self.current_point[1]-2].piece is not None):
                     self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]-2])
@@ -152,9 +149,10 @@ class Pawn(Piece):
                 next_square = chessboard.squares[self.current_point[0]][self.current_point[1]-1]
                 if next_square.piece is None:
                     self.legal_squares.append(next_square)
-                    if (self.current_point[0] < 7) and (not self.is_move) and (next_square.piece is None):
+                    if self.current_point[0] < 7:
                         next_square = chessboard.squares[self.current_point[0]+1][self.current_point[1]-1]
-                        self.legal_squares.append(next_square)
+                        if (not self.is_move) and (next_square.piece is None):
+                            self.legal_squares.append(next_square)
 
             if (self.current_point[0] < 8) and (self.current_point[1] < 8) and (chessboard.squares[self.current_point[0]][self.current_point[1]].piece is not None):
                 self.legal_squares.append(chessboard.squares[self.current_point[0]][self.current_point[1]])
