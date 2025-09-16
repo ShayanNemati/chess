@@ -1,6 +1,6 @@
 """This is the main file for our chess game"""
 import pygame
-from pygame.locals import *
+# from pygame.locals import *
 from classes import *
 
 pygame.init()
@@ -50,9 +50,9 @@ board.pieces = {
     }
 }
 
-for color in board.pieces:
-    for typee in board.pieces[color]:
-        for piece in board.pieces[color][typee]:
+for color, type_dict in board.pieces.items():
+    for typee, pieces in type_dict.items():
+        for piece in pieces:
             board.squares[piece.current_point[0]-1][piece.current_point[1]-1].piece = piece
 
 board.blit_pieces(screen)
