@@ -1,63 +1,7 @@
-"""This file is for important classes and all those stuff"""
 import pygame
 from pygame.locals import *
 
-def causes_check(piece, target_square, board):
-    """Simulate a move and return True if it would put (or leave) the mover's king in check."""
-    orig_r = piece.current_point[0] - 1
-    orig_c = piece.current_point[1] - 1
-    original_square = board.squares[orig_r][orig_c]
-    captured_piece = target_square.piece
-
-    captured_info = None
-    if captured_piece is not None:
-        color_key = 'white' if captured_piece.color_id == 1 else 'black'
-        for piece_type, lst in board.pieces[color_key].items():
-            if captured_piece in lst:
-                idx = lst.index(captured_piece)
-                captured_info = (color_key, piece_type, idx)
-                lst.pop(idx)
-                break
-
-    original_square.piece = None
-    target_square.piece = piece
-    old_point = piece.current_point
-    piece.current_point = target_square.point
-
-    sq_w = board.squares[0][0].surf.get_width()
-    sq_h = board.squares[0][0].surf.get_height()
-    temp_surface = pygame.Surface((sq_w * 8, sq_h * 8))
-
-    for color_dict in board.pieces.values():
-        for lst in color_dict.values():
-            for p in lst:
-                p.show_legal_moves(temp_surface, board)
-
-    my_color = 'white' if piece.color_id == 1 else 'black'
-    king_piece = board.pieces[my_color]['king'][0]
-    in_check = king_piece.king_check(board)
-
-    target_square.piece = captured_piece
-    original_square.piece = piece
-    piece.current_point = old_point
-
-    if captured_info is not None:
-        color_key, piece_type, idx = captured_info
-        board.pieces[color_key][piece_type].insert(idx, captured_piece)
-
-    for color_dict in board.pieces.values():
-        for lst in color_dict.values():
-            for p in lst:
-                p.show_legal_moves(temp_surface, board)
-
-    for rank in board.squares:
-        for sq in rank:
-            sq.default_color(temp_surface)
-
-    return in_check
-
 class Screen:
-    """defining a class for the screen """
     def __init__(self, width, height):
         self.width = width
         self.height = height
@@ -65,8 +9,7 @@ class Screen:
         pygame.display.set_caption("chess")
         pygame.display.set_icon(pygame.image.load("image/favicon.png"))
 
-class Chessboard(Screen):
-    """Defining the chessboard as a class"""
+class Chessboard:
     files = ['a','b','c','d','e','f','g','h']
 
     def __init__(self, w, h):
@@ -76,21 +19,17 @@ class Chessboard(Screen):
         self.pieces = {}
 
     def blit_chessboard(self, screen):
-        """for bliting the chess board"""
         for rank in self.squares:
             for sq in rank:
                 sq.default_color(screen)
 
-#mishe inja ham az .items estefade kard?
     def blit_pieces(self, screen):
-        """for bliting pieaces"""
         for rank in self.squares:
             for sq in rank:
                 if sq.piece is not None:
                     screen.blit(sq.piece.surf, sq.piece.coordinate)
 
-class Square(Chessboard):
-    """This is The square Class whihc inherits from Chessboeard class"""
+class Square:
     def __init__(self, point, coordinate, piece):
         self.point = point
         self.coordinate = coordinate
@@ -99,10 +38,9 @@ class Square(Chessboard):
         self.rect = self.surf.get_rect(topleft=self.coordinate)
 
     def __str__(self):
-        return self.files[self.point[1]-1] + str(self.point[0])
-    
+        return Chessboard.files[self.point[1]-1] + str(self.point[0])
+
     def default_color(self, screen):
-        """Idk"""
         if (self.point[0]+self.point[1]) % 2 == 0:
             self.surf.fill((125, 148, 93))
         else:
@@ -110,7 +48,6 @@ class Square(Chessboard):
         screen.blit(self.surf, self.coordinate)
 
     def highlight_square(self, screen):
-        """For highlighting some square into yellow"""
         if (self.point[0]+self.point[1]) % 2 == 0:
             self.surf.fill((185, 202, 67))
         else:
@@ -131,18 +68,17 @@ class Square(Chessboard):
             pygame.draw.circle(self.surf, (202, 203, 179), (self.surf.get_width()//2, self.surf.get_height()//2), 30, 5)
         screen.blit(self.surf, self.coordinate)
 
-class Piece(Screen):
-    """This is a MOTHER class for all the pieces"""
-
+class Piece:
     color_name = ("Black", "White")
-    legal_squares = []
-    move_history = []
 
     def __init__(self, color_id, current_point, coordinate):
         self.color_id = color_id
         self.color = self.color_name[color_id]
         self.current_point = current_point
         self.coordinate = coordinate
+        self.move_history = []
+        self.legal_squares = []
+        self.legal_squares2 = []
         self.is_move = False
 
     def move(self, move_square, sound):
@@ -161,11 +97,13 @@ class Piece(Screen):
         move_square.piece = None
         self.move(move_square, sound)
 
-    def king_check(self):
-        pass
+    def king_check(self, chessboard):
+        if not isinstance(self, King):
+            return False
+        king_square = chessboard.squares[self.current_point[0]-1][self.current_point[1]-1]
+        return square_under_attack(chessboard, king_square, 1 - self.color_id)
 
 class Pawn(Piece):
-    """This is the son class for the pawn"""
     value = 1
 
     def __init__(self ,color, current_point, coordinate):
@@ -175,13 +113,10 @@ class Pawn(Piece):
         else:
             self.surf = pygame.image.load("image/b_pawn.png").convert_alpha()
         self.surf = pygame.transform.rotozoom(self.surf ,0, 0.4)
-        
+
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-
         if self.color_id == 0:
-
             if self.current_point[0] > 1:
                 next_square = chessboard.squares[self.current_point[0]-2][self.current_point[1]-1]
                 if next_square.piece is None:
@@ -190,15 +125,11 @@ class Pawn(Piece):
                         next_square = chessboard.squares[self.current_point[0]-3][self.current_point[1]-1]
                         if (not self.is_move) and (next_square.piece is None):
                             self.legal_squares.append(next_square)
-
             if (self.current_point[0] > 1) and (self.current_point[1] > 1) and (chessboard.squares[self.current_point[0]-2][self.current_point[1]-2].piece is not None):
-                    self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]-2])
-
+                self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]-2])
             if (self.current_point[0] > 1) and (self.current_point[1] < 8) and chessboard.squares[self.current_point[0]-2][self.current_point[1]].piece is not None:
-                    self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]])
-
+                self.legal_squares.append(chessboard.squares[self.current_point[0]-2][self.current_point[1]])
         else:
-
             if self.current_point[0] < 8:
                 next_square = chessboard.squares[self.current_point[0]][self.current_point[1]-1]
                 if next_square.piece is None:
@@ -207,12 +138,10 @@ class Pawn(Piece):
                         next_square = chessboard.squares[self.current_point[0]+1][self.current_point[1]-1]
                         if (not self.is_move) and (next_square.piece is None):
                             self.legal_squares.append(next_square)
-
             if (self.current_point[0] < 8) and (self.current_point[1] < 8) and (chessboard.squares[self.current_point[0]][self.current_point[1]].piece is not None):
                 self.legal_squares.append(chessboard.squares[self.current_point[0]][self.current_point[1]])
-
             if (self.current_point[0] < 8) and (self.current_point[1] > 1) and (chessboard.squares[self.current_point[0]][self.current_point[1]-2].piece is not None):
-                    self.legal_squares.append(chessboard.squares[self.current_point[0]][self.current_point[1]-2])
+                self.legal_squares.append(chessboard.squares[self.current_point[0]][self.current_point[1]-2])
 
         for sq in self.legal_squares:
             if sq.piece is None:
@@ -230,7 +159,6 @@ class Pawn(Piece):
         return "Pawn"
 
 class Rook(Piece):
-    """This is the son class for the rook"""
     value = 5
     def __init__(self, color, current_point, coordinate):
         super().__init__(color, current_point, coordinate)
@@ -241,9 +169,7 @@ class Rook(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-
         for i in range(self.current_point[0] - 2, -1, -1):
             square = chessboard.squares[i][self.current_point[1] - 1]
             if square.piece is not None:
@@ -254,7 +180,6 @@ class Rook(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         for i in range(self.current_point[0], 8):
             square = chessboard.squares[i][self.current_point[1] - 1]
             if square.piece is not None:
@@ -265,7 +190,6 @@ class Rook(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         for j in range(self.current_point[1] - 2, -1, -1):
             square = chessboard.squares[self.current_point[0] - 1][j]
             if square.piece is not None:
@@ -276,7 +200,6 @@ class Rook(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         for j in range(self.current_point[1], 8):
             square = chessboard.squares[self.current_point[0] - 1][j]
             if square.piece is not None:
@@ -287,7 +210,6 @@ class Rook(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         for sq in self.legal_squares:
             if sq.piece is None:
                 sq.show_move_marker(screen)
@@ -298,9 +220,7 @@ class Rook(Piece):
         return "Rook"
 
 class Knight(Piece):
-    """This is the son class for the knight"""
     value = 3
-
     def __init__(self, color, current_point, coordinate):
         super().__init__(color, current_point, coordinate)
         if color == 1:
@@ -310,7 +230,6 @@ class Knight(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
         col , row = self.current_point[0] - 1 ,  self.current_point[1] - 1
         moves = [
@@ -319,11 +238,9 @@ class Knight(Piece):
             (col + 1, row - 2), (col + 1, row + 2),
             (col + 2, row - 1), (col + 2, row + 1)
         ]
-
         for r, c in moves:
             if 0 <= r < 8 and 0 <= c < 8:
                 self.legal_squares.append(chessboard.squares[r][c])
-
         for sq in self.legal_squares:
             if sq.piece is None:
                 sq.show_move_marker(screen)
@@ -334,9 +251,7 @@ class Knight(Piece):
         return "Knight"
 
 class Bishop(Piece):
-    """This is the son class for the bishop"""
     value = 3
-
     def __init__(self, color, current_point, coordinate):
         super().__init__(color, current_point, coordinate)
         if color == 1:
@@ -346,9 +261,7 @@ class Bishop(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
-
         r, c = self.current_point[0] - 2, self.current_point[1] - 2
         while r >= 0 and c >= 0:
             if chessboard.squares[r][c].piece is not None:
@@ -361,7 +274,6 @@ class Bishop(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r -= 1
                 c -= 1
-
         r, c = self.current_point[0] - 2, self.current_point[1]
         while r >= 0 and c < 8:
             if chessboard.squares[r][c].piece is not None:
@@ -374,7 +286,6 @@ class Bishop(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r -= 1
                 c += 1
-
         r, c = self.current_point[0], self.current_point[1] - 2
         while r < 8 and c >= 0:
             if chessboard.squares[r][c].piece is not None:
@@ -387,7 +298,6 @@ class Bishop(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r += 1
                 c -= 1
-
         r, c = self.current_point[0], self.current_point[1]
         while r < 8 and c < 8:
             if chessboard.squares[r][c].piece is not None:
@@ -400,7 +310,6 @@ class Bishop(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r += 1
                 c += 1
-
         for sq in self.legal_squares:
             if sq.piece is None:
                 sq.show_move_marker(screen)
@@ -411,9 +320,7 @@ class Bishop(Piece):
         return "Bishop"
 
 class Queen(Piece):
-    """This is the son class for the queen"""
     value = 9
-
     def __init__(self, color, current_point, coordinate):
         super().__init__(color, current_point, coordinate)
         if color == 1:
@@ -423,10 +330,8 @@ class Queen(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
         row, col = self.current_point[0], self.current_point[1]
-
         for i in range(row - 2, -1, -1):
             square = chessboard.squares[i][self.current_point[1] - 1]
             if square.piece is not None:
@@ -437,7 +342,6 @@ class Queen(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         for i in range(row, 8):
             square = chessboard.squares[i][self.current_point[1] - 1]
             if square.piece is not None:
@@ -448,7 +352,6 @@ class Queen(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         for j in range(col - 2, -1, -1):
             square = chessboard.squares[self.current_point[0] - 1][j]
             if square.piece is not None:
@@ -459,7 +362,6 @@ class Queen(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         for j in range(col, 8):
             square = chessboard.squares[self.current_point[0] - 1][j]
             if square.piece is not None:
@@ -470,7 +372,6 @@ class Queen(Piece):
                     break
             else:
                 self.legal_squares.append(square)
-
         r, c = row - 2, col - 2
         while r >= 0 and c >= 0:
             if chessboard.squares[r][c].piece is not None:
@@ -483,7 +384,6 @@ class Queen(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r -= 1
                 c -= 1
-
         r, c = row - 2, col
         while r >= 0 and c < 8:
             if chessboard.squares[r][c].piece is not None:
@@ -496,7 +396,6 @@ class Queen(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r -= 1
                 c += 1
-
         r, c = row, col - 2
         while r < 8 and c >= 0:
             if chessboard.squares[r][c].piece is not None:
@@ -509,7 +408,6 @@ class Queen(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r += 1
                 c -= 1
-
         r, c = row, col
         while r < 8 and c < 8:
             if chessboard.squares[r][c].piece is not None:
@@ -522,7 +420,6 @@ class Queen(Piece):
                 self.legal_squares.append(chessboard.squares[r][c])
                 r += 1
                 c += 1
-
         for sq in self.legal_squares:
             if sq.piece is None:
                 sq.show_move_marker(screen)
@@ -533,9 +430,7 @@ class Queen(Piece):
         return "Queen"
 
 class King(Piece):
-    """This is the son class for the king"""
     value = 0
-
     def __init__(self, color, current_point, coordinate):
         super().__init__(color, current_point, coordinate)
         if color == 1:
@@ -545,7 +440,6 @@ class King(Piece):
         self.surf = pygame.transform.rotozoom(self.surf, 0, 0.4)
 
     def show_legal_moves(self, screen, chessboard):
-
         self.legal_squares.clear()
         row, col = self.current_point[0] - 1, self.current_point[1] - 1
         moves = [
@@ -553,11 +447,9 @@ class King(Piece):
             (row, col - 1),                     (row, col + 1),
             (row + 1, col - 1), (row + 1, col), (row + 1, col + 1)
         ]
-
         for r, c in moves:
             if 0 <= r < 8 and 0 <= c < 8:
                 self.legal_squares.append(chessboard.squares[r][c])
-
         for sq in self.legal_squares:
             if sq.piece is None:
                 sq.show_move_marker(screen)
@@ -569,3 +461,106 @@ class King(Piece):
 
     def castle(self):
         pass
+
+def square_under_attack(chessboard, target_square, by_color_id):
+    r0 = target_square.point[0] - 1
+    c0 = target_square.point[1] - 1
+
+    # Pawn attacks
+    if by_color_id == 1:
+        pr = r0 - 1
+        for dc in (-1, 1):
+            pc = c0 + dc
+            if 0 <= pr < 8 and 0 <= pc < 8:
+                p = chessboard.squares[pr][pc].piece
+                if p is not None and isinstance(p, Pawn) and p.color_id == by_color_id:
+                    return True
+    else:
+        pr = r0 + 1
+        for dc in (-1, 1):
+            pc = c0 + dc
+            if 0 <= pr < 8 and 0 <= pc < 8:
+                p = chessboard.squares[pr][pc].piece
+                if p is not None and isinstance(p, Pawn) and p.color_id == by_color_id:
+                    return True
+
+    # Knight attacks
+    knight_moves = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]
+    for dr, dc in knight_moves:
+        r = r0 + dr; c = c0 + dc
+        if 0 <= r < 8 and 0 <= c < 8:
+            p = chessboard.squares[r][c].piece
+            if p is not None and isinstance(p, Knight) and p.color_id == by_color_id:
+                return True
+
+    # Straight lines (rook/queen)
+    straight_dirs = [(-1,0),(1,0),(0,-1),(0,1)]
+    for dr, dc in straight_dirs:
+        r = r0 + dr; c = c0 + dc
+        while 0 <= r < 8 and 0 <= c < 8:
+            p = chessboard.squares[r][c].piece
+            if p is not None:
+                if p.color_id == by_color_id and (isinstance(p, Rook) or isinstance(p, Queen)):
+                    return True
+                break
+            r += dr; c += dc
+
+    # Diagonals (bishop/queen)
+    diag_dirs = [(-1,-1),(-1,1),(1,-1),(1,1)]
+    for dr, dc in diag_dirs:
+        r = r0 + dr; c = c0 + dc
+        while 0 <= r < 8 and 0 <= c < 8:
+            p = chessboard.squares[r][c].piece
+            if p is not None:
+                if p.color_id == by_color_id and (isinstance(p, Bishop) or isinstance(p, Queen)):
+                    return True
+                break
+            r += dr; c += dc
+
+    # King adjacency
+    for dr in (-1,0,1):
+        for dc in (-1,0,1):
+            if dr == 0 and dc == 0:
+                continue
+            r = r0 + dr; c = c0 + dc
+            if 0 <= r < 8 and 0 <= c < 8:
+                p = chessboard.squares[r][c].piece
+                if p is not None and isinstance(p, King) and p.color_id == by_color_id:
+                    return True
+
+    return False
+
+def causes_check(piece, target_square, board):
+    orig_r = piece.current_point[0] - 1
+    orig_c = piece.current_point[1] - 1
+    original_square = board.squares[orig_r][orig_c]
+
+    captured_piece = target_square.piece
+
+    original_square.piece = None
+    target_square.piece = piece
+    old_point = piece.current_point
+    piece.current_point = target_square.point
+
+    # find mover's king on the board (scan squares)
+    mover_color = piece.color_id
+    king_piece = None
+    for rank in board.squares:
+        for sq in rank:
+            p = sq.piece
+            if p is not None and isinstance(p, King) and p.color_id == mover_color:
+                king_piece = p
+                break
+        if king_piece is not None:
+            break
+
+    in_check = False
+    if king_piece is not None:
+        king_sq = board.squares[king_piece.current_point[0]-1][king_piece.current_point[1]-1]
+        in_check = square_under_attack(board, king_sq, 1 - mover_color)
+
+    target_square.piece = captured_piece
+    original_square.piece = piece
+    piece.current_point = old_point
+
+    return in_check

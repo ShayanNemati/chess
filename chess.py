@@ -32,23 +32,23 @@ for rank in range(1,9):
     X -= 8*60
 
 board.pieces = {
-        'white': {
-            "pawn": [Pawn(1, (2,i), (94+(i-1)*60,454)) for i in range(1,9)],
-            "rook": [Rook(1, (1,1), (91,512)), Rook(1, (1,8), (513,512))],
-            "knight": [Knight(1, (1,2), (148,508)), Knight(1, (1,7), (447,508))],
-            "bishop": [Bishop(1, (1,3), (212,507)), Bishop(1, (1,6), (392,507))],
-            "queen": [Queen(1, (1,4), (266,507))],
-            "king": [King(1, (1,5), (327,505))]
-        },
-        'black': {
-            "pawn": [Pawn(0, (7,i), (94+(i-1)*60,154)) for i in range(1,9)],
-            "rook": [Rook(0, (8,1), (91,91)), Rook(0, (8,8), (513,91))],
-            "knight": [Knight(0, (8,2), (148,87)), Knight(0, (8,7), (447,87))],
-            "bishop": [Bishop(0, (8,3), (212,86)), Bishop(0, (8,6), (392,86))],
-            "queen": [Queen(0, (8,4), (266,86))],
-            "king": [King(0, (8,5), (327,84))]
-        }
+    'white': {
+        "pawn": [Pawn(1, (2,i), (94+(i-1)*60,454)) for i in range(1,9)],
+        "rook": [Rook(1, (1,1), (91,512)), Rook(1, (1,8), (513,512))],
+        "knight": [Knight(1, (1,2), (148,508)), Knight(1, (1,7), (447,508))],
+        "bishop": [Bishop(1, (1,3), (212,507)), Bishop(1, (1,6), (392,507))],
+        "queen": [Queen(1, (1,4), (266,507))],
+        "king": [King(1, (1,5), (327,505))]
+    },
+    'black': {
+        "pawn": [Pawn(0, (7,i), (94+(i-1)*60,154)) for i in range(1,9)],
+        "rook": [Rook(0, (8,1), (91,91)), Rook(0, (8,8), (513,91))],
+        "knight": [Knight(0, (8,2), (148,87)), Knight(0, (8,7), (447,87))],
+        "bishop": [Bishop(0, (8,3), (212,86)), Bishop(0, (8,6), (392,86))],
+        "queen": [Queen(0, (8,4), (266,86))],
+        "king": [King(0, (8,5), (327,84))]
     }
+}
 
 for color in board.pieces:
     for typee in board.pieces[color]:
@@ -77,34 +77,49 @@ while True:
                                 SELECTED_SQUARE.highlight_square(screen)
                                 SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                         else:
+                            # We have a selected square already
+                            origin_sq = SELECTED_SQUARE
+                            origin_piece = origin_sq.piece
+
                             if sq.piece is not None:
-                                if SELECTED_SQUARE.piece.color_id != sq.piece.color_id:
-                                    if sq in SELECTED_SQUARE.piece.legal_squares or sq in SELECTED_SQUARE.piece.legal_squares2:
-                                        if not causes_check(SELECTED_SQUARE.piece, sq, board):
-                                            SELECTED_SQUARE.piece.capture(sq, board)
-                                            capture.play()
+                                # clicked on another piece
+                                if origin_piece.color_id != sq.piece.color_id:
+                                    # capture attempt
+                                    if sq in origin_piece.legal_squares or sq in origin_piece.legal_squares2:
+                                        if not causes_check(origin_piece, sq, board):
+                                            origin_piece.capture(board, sq, capture)
+                                            origin_sq.piece = None
+                                            SELECTED_SQUARE = None
                                         else:
                                             print("Illegal capture: King would be in check")
-                                        SELECTED_SQUARE.piece = None
-                                        SELECTED_SQUARE = None
+                                            # keep selection and redraw its legal moves
+                                            board.blit_chessboard(screen)
+                                            SELECTED_SQUARE.highlight_square(screen)
+                                            SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                                     else:
                                         SELECTED_SQUARE = sq
                                         SELECTED_SQUARE.highlight_square(screen)
                                         SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                                 else:
+                                    # clicked on own piece -> switch selection
                                     SELECTED_SQUARE = sq
                                     SELECTED_SQUARE.highlight_square(screen)
                                     SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                             else:
-                                if sq in SELECTED_SQUARE.piece.legal_squares:
-                                    if not causes_check(SELECTED_SQUARE.piece, sq, board):
-                                        SELECTED_SQUARE.piece.move(sq)
-                                        move.play()
+                                # clicked on empty square -> move attempt
+                                if sq in origin_piece.legal_squares:
+                                    if not causes_check(origin_piece, sq, board):
+                                        origin_piece.move(sq, move)
+                                        origin_sq.piece = None
+                                        SELECTED_SQUARE = None
                                     else:
                                         print("Illegal move: King would be in check")
-                                    SELECTED_SQUARE.piece = None
-                                    SELECTED_SQUARE = None
+                                        # keep selection and redraw its legal moves
+                                        board.blit_chessboard(screen)
+                                        SELECTED_SQUARE.highlight_square(screen)
+                                        SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                                 else:
+                                    # clicked on empty square that's not legal -> deselect
                                     SELECTED_SQUARE = None
 
             board.blit_pieces(screen)
