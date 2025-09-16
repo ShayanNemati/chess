@@ -86,16 +86,24 @@ while True:
                 for sq in rank:
                     if sq.rect.collidepoint(event.pos):
                         if (sq.piece is not None) and (SELECTED_SQUARE is not None) and (sq in SELECTED_SQUARE.piece.legal_squares or sq in SELECTED_SQUARE.piece.legal_squares2):
-                            SELECTED_SQUARE.piece.capture(sq , board)
-                            move.play()
+                            if not causes_check(SELECTED_SQUARE.piece, sq, board):  # ✅ Only allow if safe
+                                SELECTED_SQUARE.piece.capture(sq, board)
+                                move.play()
+                            else:
+                                print("Illegal capture: King would be in check")
                             SELECTED_SQUARE.piece = None
                             SELECTED_SQUARE = None
+
                             
                         elif (sq.piece is None) and (SELECTED_SQUARE is not None) and (sq in SELECTED_SQUARE.piece.legal_squares):
-                            SELECTED_SQUARE.piece.move(sq)
-                            move.play()
+                            if not causes_check(SELECTED_SQUARE.piece, sq, board):  # ✅ Only allow if safe
+                                SELECTED_SQUARE.piece.move(sq)
+                                move.play()
+                            else:
+                                print("Illegal move: King would be in check")
                             SELECTED_SQUARE.piece = None
                             SELECTED_SQUARE = None
+
                         elif sq.piece is not None:
                             SELECTED_SQUARE = sq
                             SELECTED_SQUARE.highlight_square(screen)
