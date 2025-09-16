@@ -1,29 +1,22 @@
 """This is the main file for our chess game"""
 import pygame
-#! wild card imports shuold be fixed at the end later
 from pygame.locals import *
 from classes import *
 
-pygame.init() #pygame init does not exists error?!!!!
+pygame.init()
 pygame.mixer.init()
 
-#display window
 WIDTH = 640
 HEIGHT = 640
 screen = Screen(WIDTH, HEIGHT).screen
 
-#sounds
 start_game = pygame.mixer.Sound('sound/game-start.mp3')
 move = pygame.mixer.Sound('sound/move-self.mp3')
 capture = pygame.mixer.Sound('sound/capture.mp3')
 
-#load chessboard
 board = Chessboard(WIDTH, HEIGHT)
-
-#fill screen color
 screen.fill((40,40,40))
 
-#define squares
 X = 80
 Y = 501
 for rank in range(1,9):
@@ -38,7 +31,6 @@ for rank in range(1,9):
     Y -= 60
     X -= 8*60
 
-#define peice
 board.pieces = {
         'white': {
             "pawn": [Pawn(1, (2,i), (94+(i-1)*60,454)) for i in range(1,9)],
@@ -58,7 +50,6 @@ board.pieces = {
         }
     }
 
-#insert peice in squares , #mishe ba .items behtar iterate kard?
 for color in board.pieces:
     for typee in board.pieces[color]:
         for piece in board.pieces[color][typee]:
@@ -68,9 +59,8 @@ board.blit_pieces(screen)
 start_game.play()
 pygame.display.flip()
 
-selected_square = None
+SELECTED_SQUARE = None
 
-#start chess
 while True:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -81,39 +71,41 @@ while True:
             for rank in board.squares:
                 for sq in rank:
                     if sq.rect.collidepoint(event.pos):
-                        if selected_square is None:
+                        if SELECTED_SQUARE is None:
                             if sq.piece is not None:
-                                #select square
-                                selected_square = sq
-                                selected_square.highlight_square(screen)
-                                selected_square.piece.show_legal_moves(screen, board)
+                                SELECTED_SQUARE = sq
+                                SELECTED_SQUARE.highlight_square(screen)
+                                SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                         else:
                             if sq.piece is not None:
-                                if selected_square.piece.color_id != sq.piece.color_id:
-                                    if sq in selected_square.piece.legal_squares:
-                                        #capture piece
-                                        selected_square.piece.capture(board, sq, capture)
-                                        selected_square.piece = None
-                                        selected_square = None
+                                if SELECTED_SQUARE.piece.color_id != sq.piece.color_id:
+                                    if sq in SELECTED_SQUARE.piece.legal_squares or sq in SELECTED_SQUARE.piece.legal_squares2:
+                                        if not causes_check(SELECTED_SQUARE.piece, sq, board):
+                                            SELECTED_SQUARE.piece.capture(sq, board)
+                                            capture.play()
+                                        else:
+                                            print("Illegal capture: King would be in check")
+                                        SELECTED_SQUARE.piece = None
+                                        SELECTED_SQUARE = None
                                     else:
-                                        #select square
-                                        selected_square = sq
-                                        selected_square.highlight_square(screen)
-                                        selected_square.piece.show_legal_moves(screen, board)
+                                        SELECTED_SQUARE = sq
+                                        SELECTED_SQUARE.highlight_square(screen)
+                                        SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                                 else:
-                                    #select square
-                                    selected_square = sq
-                                    selected_square.highlight_square(screen)
-                                    selected_square.piece.show_legal_moves(screen, board)
+                                    SELECTED_SQUARE = sq
+                                    SELECTED_SQUARE.highlight_square(screen)
+                                    SELECTED_SQUARE.piece.show_legal_moves(screen, board)
                             else:
-                                if sq in selected_square.piece.legal_squares:
-                                    #move piece
-                                    selected_square.piece.move(sq, move)
-                                    selected_square.piece = None
-                                    selected_square = None
+                                if sq in SELECTED_SQUARE.piece.legal_squares:
+                                    if not causes_check(SELECTED_SQUARE.piece, sq, board):
+                                        SELECTED_SQUARE.piece.move(sq)
+                                        move.play()
+                                    else:
+                                        print("Illegal move: King would be in check")
+                                    SELECTED_SQUARE.piece = None
+                                    SELECTED_SQUARE = None
                                 else:
-                                    selected_square = None
-                                    
+                                    SELECTED_SQUARE = None
 
             board.blit_pieces(screen)
             pygame.display.flip()

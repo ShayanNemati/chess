@@ -2,6 +2,60 @@
 import pygame
 from pygame.locals import *
 
+def causes_check(piece, target_square, board):
+    """Simulate a move and return True if it would put (or leave) the mover's king in check."""
+    orig_r = piece.current_point[0] - 1
+    orig_c = piece.current_point[1] - 1
+    original_square = board.squares[orig_r][orig_c]
+    captured_piece = target_square.piece
+
+    captured_info = None
+    if captured_piece is not None:
+        color_key = 'white' if captured_piece.color_id == 1 else 'black'
+        for piece_type, lst in board.pieces[color_key].items():
+            if captured_piece in lst:
+                idx = lst.index(captured_piece)
+                captured_info = (color_key, piece_type, idx)
+                lst.pop(idx)
+                break
+
+    original_square.piece = None
+    target_square.piece = piece
+    old_point = piece.current_point
+    piece.current_point = target_square.point
+
+    sq_w = board.squares[0][0].surf.get_width()
+    sq_h = board.squares[0][0].surf.get_height()
+    temp_surface = pygame.Surface((sq_w * 8, sq_h * 8))
+
+    for color_dict in board.pieces.values():
+        for lst in color_dict.values():
+            for p in lst:
+                p.show_legal_moves(temp_surface, board)
+
+    my_color = 'white' if piece.color_id == 1 else 'black'
+    king_piece = board.pieces[my_color]['king'][0]
+    in_check = king_piece.king_check(board)
+
+    target_square.piece = captured_piece
+    original_square.piece = piece
+    piece.current_point = old_point
+
+    if captured_info is not None:
+        color_key, piece_type, idx = captured_info
+        board.pieces[color_key][piece_type].insert(idx, captured_piece)
+
+    for color_dict in board.pieces.values():
+        for lst in color_dict.values():
+            for p in lst:
+                p.show_legal_moves(temp_surface, board)
+
+    for rank in board.squares:
+        for sq in rank:
+            sq.default_color(temp_surface)
+
+    return in_check
+
 class Screen:
     """defining a class for the screen """
     def __init__(self, width, height):
